@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>Lista de Efectos</h1>
+
+    <ul>
+        {% for my_efect in efects %}
+        <a href="{% url 'update_efects' my_efect.id %}">
+            <li> {{ my_efect.element_one.nombre }} - {{my_efect.key_word}} - {{my_efect.element_two.nombre}}</li>
+        </a>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'create_efects' %}">Nuevo efecto</a>
+</body>
+
+</html>

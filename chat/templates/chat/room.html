@@ -1,0 +1,132 @@
+<!-- chat/templates/chat/room.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Game Room</title>
+</head>
+
+<body>
+    <h1>Sala de Juego: {{ room_name_json }}</h1>
+
+    <ul style="background-color: #ccc; height: 50px; padding: 5px;">
+        <p><strong>Comparte el siguiente link para jugar con alguien:</strong>
+            http://127.0.0.1:8000/chat/<output>{{room_name_json}}</output></p>
+    </ul>
+
+    <strong>Elemento:</strong>
+    <select id="element-select">
+        <option value="">Seleccionar...</option>
+        {% for element in elements %}
+        <option value="{{ element.nombre }}">{{ element.nombre }}</option>
+        {% endfor %}
+    </select>
+    <br />
+    <br />
+    <br />
+
+    <input id="send-submit" type="button" value="Enviar" />
+    <input id="restart-submit" type="button" disabled="true" value="Reiniciar" />
+
+    <br />
+
+    <ul id="win-ul" style="background-color: #8BC34A; height: 50px; padding: 5px; display: none;">
+        <output style="font-weight: bold;" id="win-output"></output>
+    </ul>
+
+    <ul id="lose-ul" style="background-color: #f44336b5; height: 50px; padding: 5px; display: none;">
+        <output style="font-weight: bold;" id="lose-output"></output>
+    </ul>
+</body>
+<script>
+    var roomName = {{ room_name_json }};
+    var element_one = '';
+    var element_two = '';
+
+    var chatSocket = new WebSocket(
+        'ws://' + window.location.host +
+        '/ws/chat/' + roomName + '/');
+
+    chatSocket.onmessage = function (e) {
+        var data = JSON.parse(e.data);
+
+        element_one = data['element_one'];
+        console.log('Elemento uno seleccionado: ' + element_one)
+        element_two = data['element_two'];
+        console.log('Elemento dos seleccionado: ' + element_two)
+        word_key = data['word_key'];
+
+        var elementSelected = document.querySelector('#element-select').value;
+
+        if (element_one.length > 0 && element_two.length > 0) {
+            if (element_one == elementSelected) {
+                message_win = element_one + ' ' + word_key + ' ' + element_two + '. Has ganado!';
+                document.querySelector('#win-output').value = message_win;
+                document.getElementById("win-ul").style["display"] = "block";
+                document.getElementById("lose-ul").style["display"] = "none";
+            } else {
+                message_lose = element_one + ' ' + word_key + ' ' + element_two + '. Has perdido!';
+                document.querySelector('#lose-output').value = message_lose;
+                document.getElementById("win-ul").style["display"] = "none";
+                document.getElementById("lose-ul").style["display"] = "block";
+            }
+        }
+
+        if (elementSelected.length > 0 && element_one.length == 0) {
+            document.querySelector('#send-submit').disabled = false
+            document.querySelector('#element-select').disabled = false
+            document.querySelector('#element-select').value = ''
+            document.querySelector('#restart-submit').disabled = true
+            document.getElementById("win-ul").style["display"] = "none";
+            document.getElementById("lose-ul").style["display"] = "none";
+        }
+    };
+
+    chatSocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    document.querySelector('#send-submit').onclick = function (e) {
+        var elemSelectImput = document.querySelector('#element-select');
+
+        var elementSelected = elemSelectImput.value;
+        console.log('Elemento seleccionado: ' + elementSelected)
+
+        if (elementSelected.length > 0) {
+            if (element_one.length == 0) {
+                element_one = elementSelected
+            } else if (element_two.length == 0) {
+                element_two = elementSelected
+            }
+
+            document.querySelector('#send-submit').disabled = true
+            document.querySelector('#element-select').disabled = true
+            document.querySelector('#restart-submit').disabled = false
+        }
+
+        chatSocket.send(JSON.stringify({
+            'element_one': element_one,
+            'element_two': element_two
+        }));
+    };
+
+    document.querySelector('#restart-submit').onclick = function (e) {
+        document.querySelector('#send-submit').disabled = false
+        document.querySelector('#element-select').disabled = false
+        document.querySelector('#element-select').value = ''
+        document.querySelector('#restart-submit').disabled = true
+        document.getElementById("win-ul").style["display"] = "none";
+        document.getElementById("lose-ul").style["display"] = "none";
+
+        element_one = ''
+        element_two = ''
+
+        chatSocket.send(JSON.stringify({
+            'element_one': element_one,
+            'element_two': element_two
+        }));
+    }
+</script>
+
+</html>
